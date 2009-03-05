@@ -27,6 +27,8 @@ import java.util.TreeMap;
 
 import org.apache.log4j.Level;
 
+import org.jboss.logging.log4j.JDKLevel;
+
 /**
  *
  */
@@ -38,32 +40,56 @@ public final class LevelMapper {
 
     public LevelMapper() {
         // Populate mapping with standard log levels
-        registerMapping(40000, 3, new SourceLevelKey(java.util.logging.Level.SEVERE));
-        registerMapping(30000, 4, new SourceLevelKey(java.util.logging.Level.WARNING));
-        registerMapping(20000, 5, new SourceLevelKey(java.util.logging.Level.INFO));
-        registerMapping(15000, 6, new SourceLevelKey(java.util.logging.Level.CONFIG));
-        registerMapping(10000, 7, new SourceLevelKey(java.util.logging.Level.FINE));
-        registerMapping(7500, 7, new SourceLevelKey(java.util.logging.Level.FINER));
-        registerMapping(5000, 7, new SourceLevelKey(java.util.logging.Level.FINEST));
+        registerMapping(JDKLevel.SEVERE, new SourceLevelKey(java.util.logging.Level.SEVERE));
+        registerMapping(JDKLevel.WARNING, new SourceLevelKey(java.util.logging.Level.WARNING));
+        registerMapping(JDKLevel.INFO, new SourceLevelKey(java.util.logging.Level.INFO));
+        registerMapping(JDKLevel.CONFIG, new SourceLevelKey(java.util.logging.Level.CONFIG));
+        registerMapping(JDKLevel.FINE, new SourceLevelKey(java.util.logging.Level.FINE));
+        registerMapping(JDKLevel.FINER, new SourceLevelKey(java.util.logging.Level.FINER));
+        registerMapping(JDKLevel.FINEST, new SourceLevelKey(java.util.logging.Level.FINEST));
+
+        registerMapping(Level.FATAL, new SourceLevelKey(org.jboss.logmanager.Level.FATAL));
+        registerMapping(Level.ERROR, new SourceLevelKey(org.jboss.logmanager.Level.ERROR));
+        registerMapping(Level.WARN, new SourceLevelKey(org.jboss.logmanager.Level.WARN));
+        registerMapping(Level.INFO, new SourceLevelKey(org.jboss.logmanager.Level.INFO));
+        registerMapping(Level.DEBUG, new SourceLevelKey(org.jboss.logmanager.Level.DEBUG));
+        registerMapping(Level.TRACE, new SourceLevelKey(org.jboss.logmanager.Level.TRACE));
     }
 
     public synchronized Level registerMapping(final int targetLevelValue, final int targetSyslogLevel, final SourceLevelKey sourceKey) {
         final String name = sourceKey.getLevel().getName();
         final Level targetLevel = new TargetLevel(targetLevelValue, name, targetSyslogLevel);
+        return registerMapping(targetLevel, sourceKey);
+    }
+
+    public synchronized Level registerMapping(final Level targetLevel, final SourceLevelKey sourceKey) {
+        final String name = targetLevel.toString();
         final TargetLevelKey targetKey = new TargetLevelKey(targetLevel);
         if (targetToSource.containsKey(targetKey) || sourceToTarget.containsKey(sourceKey)) {
             throw new IllegalArgumentException("Cannot register log level '" + name + "' (already exists)");
         }
         targetToSource.put(targetKey, sourceKey);
         sourceToTarget.put(sourceKey, targetKey);
-        log.debug("Registered new log level '" + name + "' with value " + targetLevelValue);
+        log.debug("Registered new log level '" + name + "' with value " + targetLevel.toInt());
         return targetLevel;
+    }
+
+    public synchronized java.util.logging.Level getSourceLevelForTargetLevel(final Level targetLevel) {
+        TargetLevelKey targetKey = new TargetLevelKey(targetLevel);
+        if (targetToSource.containsKey(targetKey)) {
+            final java.util.logging.Level level = targetToSource.get(targetKey).getLevel();
+            if (level != null) {
+                return level;
+            }
+        }
+        // No mapping is found - just use INFO in that case (better to be safe than sorry)
+        return org.jboss.logmanager.Level.INFO;
     }
 
     public synchronized Level getTargetLevelForSourceLevel(final java.util.logging.Level sourceLevel) {
         SourceLevelKey sourceKey = new SourceLevelKey(sourceLevel);
         if (sourceToTarget.containsKey(sourceKey)) {
-            final Level targetLevel = (sourceToTarget.get(sourceKey)).getLevel();
+            final Level targetLevel = sourceToTarget.get(sourceKey).getLevel();
             if (targetLevel != null) {
                 return targetLevel;
             }
