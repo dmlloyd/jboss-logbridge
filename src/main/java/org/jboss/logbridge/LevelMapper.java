@@ -51,7 +51,8 @@ public final class LevelMapper {
         registerMapping(Level.FATAL, new SourceLevelKey(org.jboss.logmanager.Level.FATAL));
         registerMapping(Level.ERROR, new SourceLevelKey(org.jboss.logmanager.Level.ERROR));
         registerMapping(Level.WARN, new SourceLevelKey(org.jboss.logmanager.Level.WARN));
-        registerMapping(Level.INFO, new SourceLevelKey(org.jboss.logmanager.Level.INFO));
+        // Don't log the log4j info level; any logging from JDK INFO should go to JDKLevel.INFO.
+        // registerMapping(Level.INFO, new SourceLevelKey(org.jboss.logmanager.Level.INFO));
         registerMapping(Level.DEBUG, new SourceLevelKey(org.jboss.logmanager.Level.DEBUG));
         registerMapping(Level.TRACE, new SourceLevelKey(org.jboss.logmanager.Level.TRACE));
     }

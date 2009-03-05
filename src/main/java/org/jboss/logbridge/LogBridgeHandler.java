@@ -22,12 +22,19 @@
 
 package org.jboss.logbridge;
 
+import java.util.Collections;
+import java.util.Enumeration;
+
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Filter;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Appender;
+import org.apache.log4j.spi.LoggerRepository;
+import org.apache.log4j.spi.RepositorySelector;
 
 /**
  *
@@ -63,9 +70,43 @@ public final class LogBridgeHandler extends Handler {
 
     public void start() {
         rootLogger.addHandler(this);
+        final LoggerRepository newRepos = new BridgeHierarchy(new BridgeRootLogger(org.apache.log4j.Level.DEBUG), this);
+        final LoggerRepository oldRepos = LogManager.getLoggerRepository();
+        // Copy over all the logger data, with appenders.
+        final Enumeration le = oldRepos.getCurrentLoggers();
+        while (le.hasMoreElements()) {
+            final Logger oldLogger = (Logger) le.nextElement();
+            final String name = oldLogger.getName();
+            final Logger newLogger = newRepos.getLogger(name);
+            copyAppenders(oldLogger, newLogger);
+            final org.apache.log4j.Level oldLevel = oldLogger.getLevel();
+            if (oldLevel != null) {
+                newLogger.setLevel(oldLevel);
+            }
+            newLogger.setAdditivity(oldLogger.getAdditivity());
+            newLogger.setResourceBundle(oldLogger.getResourceBundle());
+        }
+        copyAppenders(oldRepos.getRootLogger(), newRepos.getRootLogger());
+        LogManager.setRepositorySelector(new RepositorySelector() {
+            public LoggerRepository getLoggerRepository() {
+                return newRepos;
+            }
+        }, null);
+    }
+
+    private static void copyAppenders(final Logger oldLogger, final Logger newLogger) {
+        final Enumeration ae = oldLogger.getAllAppenders();
+        while (ae.hasMoreElements()) {
+            final Appender appender = (Appender) ae.nextElement();
+            newLogger.addAppender(appender);
+        }
     }
 
     public void stop() {
         rootLogger.removeHandler(this);
+    }
+
+    LevelMapper getLevelMapper() {
+        return levelMapper;
     }
 }
