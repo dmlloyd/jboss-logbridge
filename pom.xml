@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jboss.logbridge</groupId>
-    <artifactId>logbridge</artifactId>
+    <artifactId>jboss-logbridge</artifactId>
     <packaging>jar</packaging>
     <version>1.0.0.CR1</version>
     <dependencies>
@@ -37,6 +37,6 @@
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>logbridge</finalName>
+        <finalName>jboss-logbridge</finalName>
     </build>
 </project>
