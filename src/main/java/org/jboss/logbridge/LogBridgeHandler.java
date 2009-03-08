@@ -22,7 +22,9 @@
 
 package org.jboss.logbridge;
 
+import java.util.Map;
 import java.util.Collections;
+import java.util.WeakHashMap;
 import java.util.Enumeration;
 
 import java.util.logging.Handler;
@@ -31,10 +33,7 @@ import java.util.logging.Filter;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Appender;
 import org.apache.log4j.spi.LoggerRepository;
-import org.apache.log4j.spi.RepositorySelector;
 
 /**
  *
@@ -42,8 +41,17 @@ import org.apache.log4j.spi.RepositorySelector;
 public final class LogBridgeHandler extends Handler {
 
     private final LevelMapper levelMapper = new LevelMapper();
+
     @SuppressWarnings({ "NonConstantLogger" })
     private final java.util.logging.Logger rootLogger = java.util.logging.Logger.getLogger("");
+
+    /**
+     * A weak-key map of log4j loggers to JDK loggers.  Keep this map so that the configuration setting is
+     * retained even if the JDK logger is otherwise unreferenced.
+     */
+    private final Map<Logger, java.util.logging.Logger> loggerMap = Collections.synchronizedMap(new WeakHashMap<Logger,java.util.logging.Logger>());
+
+    private static final Logger log = Logger.getLogger(LogBridgeHandler.class);
 
     public void setFilter(final Filter newFilter) throws SecurityException {
     }
@@ -70,36 +78,7 @@ public final class LogBridgeHandler extends Handler {
 
     public void start() {
         rootLogger.addHandler(this);
-        final LoggerRepository newRepos = new BridgeHierarchy(new BridgeRootLogger(org.apache.log4j.Level.DEBUG), this);
-        final LoggerRepository oldRepos = LogManager.getLoggerRepository();
-        // Copy over all the logger data, with appenders.
-        final Enumeration le = oldRepos.getCurrentLoggers();
-        while (le.hasMoreElements()) {
-            final Logger oldLogger = (Logger) le.nextElement();
-            final String name = oldLogger.getName();
-            final Logger newLogger = newRepos.getLogger(name);
-            copyAppenders(oldLogger, newLogger);
-            final org.apache.log4j.Level oldLevel = oldLogger.getLevel();
-            if (oldLevel != null) {
-                newLogger.setLevel(oldLevel);
-            }
-            newLogger.setAdditivity(oldLogger.getAdditivity());
-            newLogger.setResourceBundle(oldLogger.getResourceBundle());
-        }
-        copyAppenders(oldRepos.getRootLogger(), newRepos.getRootLogger());
-        LogManager.setRepositorySelector(new RepositorySelector() {
-            public LoggerRepository getLoggerRepository() {
-                return newRepos;
-            }
-        }, null);
-    }
-
-    private static void copyAppenders(final Logger oldLogger, final Logger newLogger) {
-        final Enumeration ae = oldLogger.getAllAppenders();
-        while (ae.hasMoreElements()) {
-            final Appender appender = (Appender) ae.nextElement();
-            newLogger.addAppender(appender);
-        }
+        updateLoggers();
     }
 
     public void stop() {
@@ -108,5 +87,39 @@ public final class LogBridgeHandler extends Handler {
 
     LevelMapper getLevelMapper() {
         return levelMapper;
+    }
+
+    public void updateLoggers() {
+        log.trace("Syncing up JDK logger levels from Log4j");
+        final Map<Logger, java.util.logging.Logger> loggerMap = this.loggerMap;
+        final LevelMapper levelMapper = this.levelMapper;
+        loggerMap.clear();
+        final Logger rootLogger = Logger.getRootLogger();
+        final LoggerRepository repository = rootLogger.getLoggerRepository();
+        final Enumeration loggers = repository.getCurrentLoggers();
+        while (loggers.hasMoreElements()) {
+            final Logger logger = (Logger) loggers.nextElement();
+            final String name = logger.getName();
+            final java.util.logging.Logger jdkLogger = java.util.logging.Logger.getLogger(name);
+            final org.apache.log4j.Level targetLevel = logger.getLevel();
+            if (targetLevel == null) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Remapping logger \"" + name + "\" with null level");
+                }
+                jdkLogger.setLevel(null);
+            } else {
+                final Level sourceLevel = levelMapper.getSourceLevelForTargetLevel(targetLevel);
+                if (log.isTraceEnabled()) {
+                    log.trace("Remapping logger \"" + name + "\" to JDK level \"" + sourceLevel + "\"");
+                }
+                loggerMap.put(logger, jdkLogger);
+                jdkLogger.setLevel(sourceLevel);
+            }
+        }
+        final Level sourceLevel = levelMapper.getSourceLevelForTargetLevel(rootLogger.getLevel());
+        if (log.isTraceEnabled()) {
+            log.trace("Remapping root logger to JDK level \"" + sourceLevel + "\"");
+        }
+        this.rootLogger.setLevel(sourceLevel);
     }
 }
