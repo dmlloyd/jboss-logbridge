@@ -7,7 +7,7 @@
     <groupId>org.jboss.logbridge</groupId>
     <artifactId>jboss-logbridge</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0.CR2</version>
+    <version>1.0.0.CR3</version>
     <dependencies>
         <dependency>
             <groupId>apache-log4j</groupId>
@@ -39,4 +39,11 @@
         </plugins>
         <finalName>jboss-logbridge</finalName>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>repository.jboss.org</id>
+            <name>JBoss Maven2 Repository</name>
+            <url>${repository.url}</url>
+        </repository>
+    </distributionManagement>
 </project>
