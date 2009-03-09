@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.WeakHashMap;
 import java.util.Enumeration;
+import java.text.MessageFormat;
 
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -66,7 +67,9 @@ public final class LogBridgeHandler extends Handler {
     public void publish(final LogRecord record) {
         Logger targetLogger = Logger.getLogger(record.getLoggerName());
         final Priority targetLevel = levelMapper.getTargetLevelForSourceLevel(record.getLevel());
-        final String text = record.getMessage();
+        final String msg = record.getMessage();
+        final Object[] parameters = record.getParameters();
+        final String text = parameters != null ? MessageFormat.format(msg, parameters) : msg;
         targetLogger.log(record.getLoggerName(), targetLevel, text, record.getThrown());
     }
 
