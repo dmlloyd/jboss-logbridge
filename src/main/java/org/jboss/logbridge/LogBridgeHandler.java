@@ -53,6 +53,7 @@ public final class LogBridgeHandler extends Handler {
     private final Map<Logger, java.util.logging.Logger> loggerMap = Collections.synchronizedMap(new WeakHashMap<Logger,java.util.logging.Logger>());
 
     private static final Logger log = Logger.getLogger(LogBridgeHandler.class);
+    private static final String LOGGER_CLASS_NAME = java.util.logging.Logger.class.getName();
 
     public void setFilter(final Filter newFilter) throws SecurityException {
     }
@@ -70,7 +71,7 @@ public final class LogBridgeHandler extends Handler {
         final String msg = record.getMessage();
         final Object[] parameters = record.getParameters();
         final String text = parameters != null ? MessageFormat.format(msg, parameters) : msg;
-        targetLogger.log(record.getLoggerName(), targetLevel, text, record.getThrown());
+        targetLogger.log(LOGGER_CLASS_NAME, targetLevel, text, record.getThrown());
     }
 
     public void flush() {
