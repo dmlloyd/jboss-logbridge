@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.WeakHashMap;
 import java.util.Enumeration;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
 import java.text.MessageFormat;
 
 import java.util.logging.Handler;
@@ -68,10 +70,24 @@ public final class LogBridgeHandler extends Handler {
     public void publish(final LogRecord record) {
         Logger targetLogger = Logger.getLogger(record.getLoggerName());
         final Priority targetLevel = levelMapper.getTargetLevelForSourceLevel(record.getLevel());
-        final String msg = record.getMessage();
-        final Object[] parameters = record.getParameters();
-        final String text = parameters != null ? MessageFormat.format(msg, parameters) : msg;
+        final String text = formatRecord(record);
         targetLogger.log(LOGGER_CLASS_NAME, targetLevel, text, record.getThrown());
+    }
+
+    private String formatRecord(final LogRecord record) {
+        final ResourceBundle bundle = record.getResourceBundle();
+        String msg = record.getMessage();
+        if (bundle != null) {
+            try {
+                msg = bundle.getString(msg);
+            } catch (MissingResourceException ex) {
+                // ignore
+            }
+        }
+        final Object[] parameters = record.getParameters();
+        return parameters != null &&
+                parameters.length > 0 &&
+                msg.indexOf('{') >= 0 ? MessageFormat.format(msg, parameters) : msg;
     }
 
     public void flush() {
