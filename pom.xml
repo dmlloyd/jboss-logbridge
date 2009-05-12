@@ -7,7 +7,7 @@
     <groupId>org.jboss.logbridge</groupId>
     <artifactId>jboss-logbridge</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0.GA</version>
+    <version>1.0.1-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>apache-log4j</groupId>
