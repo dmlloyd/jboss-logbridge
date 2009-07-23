@@ -46,7 +46,7 @@ public final class TargetLevelKey implements Comparable<TargetLevelKey> {
     }
 
     public boolean equals(final Object o) {
-        return o instanceof TargetLevelKey ? compareTo((TargetLevelKey)o) == 0 : false;
+        return (o instanceof TargetLevelKey) && compareTo((TargetLevelKey)o) == 0;
     }
 
     public int hashCode() {

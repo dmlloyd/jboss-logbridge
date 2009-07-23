@@ -48,7 +48,7 @@ public final class SourceLevelKey implements Comparable<SourceLevelKey> {
     }
 
     public boolean equals(final Object o) {
-        return o instanceof SourceLevelKey ? compareTo((SourceLevelKey)o) == 0 : false;
+        return (o instanceof SourceLevelKey) && compareTo((SourceLevelKey)o) == 0;
     }
 
     public int hashCode() {
