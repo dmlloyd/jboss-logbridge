@@ -68,7 +68,8 @@ public final class LogBridgeHandler extends Handler {
     }
 
     public void publish(final LogRecord record) {
-        Logger targetLogger = Logger.getLogger(record.getLoggerName());
+        final String name = record.getLoggerName();
+        Logger targetLogger = Logger.getLogger(name == null ? "anonymous" : name);
         final Priority targetLevel = levelMapper.getTargetLevelForSourceLevel(record.getLevel());
         final String text = formatRecord(record);
         targetLogger.log(LOGGER_CLASS_NAME, targetLevel, text, record.getThrown());
