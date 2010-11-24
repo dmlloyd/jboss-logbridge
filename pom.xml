@@ -29,9 +29,14 @@
     <groupId>org.jboss.logbridge</groupId>
     <artifactId>jboss-logbridge</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1.GA</version>
 
     <name>JBoss LogBridge</name>
+
+    <properties>
+        <maven.compiler.target>1.5</maven.compiler.target>
+        <maven.compiler.source>1.5</maven.compiler.source>
+    </properties>
 
     <parent>
         <groupId>org.jboss</groupId>
